@@ -1,0 +1,181 @@
+<script type="text/javascript">
+        var gk_isXlsx = false;
+        var gk_xlsxFileLookup = {};
+        var gk_fileData = {};
+        function filledCell(cell) {
+          return cell !== '' && cell != null;
+        }
+        function loadFileData(filename) {
+        if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
+            try {
+                var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
+                var firstSheetName = workbook.SheetNames[0];
+                var worksheet = workbook.Sheets[firstSheetName];
+
+                // Convert sheet to JSON to filter blank rows
+                var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
+                // Filter out blank rows (rows where all cells are empty, null, or undefined)
+                var filteredData = jsonData.filter(row => row.some(filledCell));
+
+                // Heuristic to find the header row by ignoring rows with fewer filled cells than the next row
+                var headerRowIndex = filteredData.findIndex((row, index) =>
+                  row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
+                );
+                // Fallback
+                if (headerRowIndex === -1 || headerRowIndex > 25) {
+                  headerRowIndex = 0;
+                }
+
+                // Convert filtered JSON back to CSV
+                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex)); // Create a new sheet from filtered array of arrays
+                csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
+                return csv;
+            } catch (e) {
+                console.error(e);
+                return "";
+            }
+        }
+        return gk_fileData[filename] || "";
+        }
+        </script><!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Soren Music</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <link rel="stylesheet" href="/styles.css">
+    <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore.js"></script>
+</head>
+<body class="bg-gray-900 text-white font-sans">
+    <!-- Navigation -->
+    <nav class="bg-indigo-900 py-4 sticky top-0 z-10">
+        <div class="container mx-auto px-4 flex justify-between items-center">
+            <h1 class="text-2xl font-bold">Soren Music</h1>
+            <ul class="flex space-x-6">
+                <li><a href="#home" class="hover:text-indigo-200">Home</a></li>
+                <li><a href="#stream" class="hover:text-indigo-200">Stream</a></li>
+                <li><a href="#upload" class="hover:text-indigo-200">Upload</a></li>
+                <li><a href="#contact" class="hover:text-indigo-200">Contact</a></li>
+                <li id="userMenu" class="hidden">
+                    <span id="userEmail" class="mr-2"></span>
+                    <button id="logoutBtn" class="text-indigo-200 hover:text-white">Logout</button>
+                </li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- Sign-In/Sign-Up Section -->
+    <section id="home" class="py-16 bg-gray-800">
+        <div class="container mx-auto px-4 text-center">
+            <h2 class="text-4xl font-bold mb-4">Welcome to Soren Music</h2>
+            <p class="text-lg mb-6">Stream music for free or upload your own tracks.</p>
+            <div id="authSection" class="max-w-md mx-auto bg-gray-700 p-6 rounded-lg shadow-lg">
+                <div id="signupForm" class="space-y-4">
+                    <h3 class="text-xl font-semibold">Create an Account</h3>
+                    <div>
+                        <label for="signupEmail" class="block text-sm font-medium">Email</label>
+                        <input type="email" id="signupEmail" class="mt-1 w-full p-2 bg-gray-600 text-white border-none rounded-md" placeholder="Enter email">
+                    </div>
+                    <div>
+                        <label for="signupPassword" class="block text-sm font-medium">Password</label>
+                        <input type="password" id="signupPassword" class="mt-1 w-full p-2 bg-gray-600 text-white border-none rounded-md" placeholder="Enter password">
+                    </div>
+                    <button id="signupBtn" class="w-full bg-indigo-600 py-2 rounded-md hover:bg-indigo-700">Sign Up</button>
+                    <p class="text-sm text-gray-400">Already have an account? <a href="#" id="showLogin" class="text-indigo-400 hover:underline">Login</a></p>
+                </div>
+                <div id="loginForm" class="space-y-4 hidden">
+                    <h3 class="text-xl font-semibold">Login</h3>
+                    <div>
+                        <label for="loginEmail" class="block text-sm font-medium">Email</label>
+                        <input type="email" id="loginEmail" class="mt-1 w-full p-2 bg-gray-600 text-white border-none rounded-md" placeholder="Enter email">
+                    </div>
+                    <div>
+                        <label for="loginPassword" class="block text-sm font-medium">Password</label>
+                        <input type="password" id="loginPassword" class="mt-1 w-full p-2 bg-gray-600 text-white border-none rounded-md" placeholder="Enter password">
+                    </div>
+                    <button id="loginBtn" class="w-full bg-indigo-600 py-2 rounded-md hover:bg-indigo-700">Login</button>
+                    <p class="text-sm text-gray-400">Don't have an account? <a href="#" id="showSignup" class="text-indigo-400 hover:underline">Sign Up</a></p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Streaming Section -->
+    <section id="stream" class="py-16 bg-gray-900">
+        <div class="container mx-auto px-4">
+            <h2 class="text-3xl font-bold text-center mb-8">Stream Music</h2>
+            <div id="musicStream" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Tracks will be added dynamically -->
+            </div>
+        </div>
+    </section>
+
+    <!-- Upload Section -->
+    <section id="upload" class="py-16 bg-gray-800">
+        <div class="container mx-auto px-4">
+            <h2 class="text-3xl font-bold text-center mb-8">Upload Your Music</h2>
+            <div class="max-w-lg mx-auto bg-gray-700 p-6 rounded-lg shadow-lg">
+                <form id="uploadForm" enctype="multipart/form-data" class="space-y-4">
+                    <div>
+                        <label for="title" class="block text-sm font-medium">Title</label>
+                        <input type="text" id="title" name="title" class="mt-1 w-full p-2 bg-gray-600 text-white border-none rounded-md" placeholder="Enter title" required>
+                    </div>
+                    <div>
+                        <label for="artist" class="block text-sm font-medium">Artist</label>
+                        <input type="text" id="artist" name="artist" class="mt-1 w-full p-2 bg-gray-600 text-white border-none rounded-md" placeholder="Enter artist name" required>
+                    </div>
+                    <div>
+                        <label for="genre" class="block text-sm font-medium">Genre</label>
+                        <select id="genre" name="genre" class="mt-1 w-full p-2 bg-gray-600 text-white border-none rounded-md" required>
+                            <option value="pop">Pop</option>
+                            <option value="rock">Rock</option>
+                            <option value="hiphop">Hip-Hop</option>
+                            <option value="jazz">Jazz</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="type" class="block text-sm font-medium">Type</label>
+                        <select id="type" name="type" class="mt-1 w-full p-2 bg-gray-600 text-white border-none rounded-md" required>
+                            <option value="single">Single</option>
+                            <option value="album">Album</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="audioFile" class="block text-sm font-medium">Audio File (MP3)</label>
+                        <input type="file" id="audioFile" name="audioFile" accept="audio/mp3" class="mt-1 w-full p-2 bg-gray-600 text-white border-none rounded-md" required>
+                    </div>
+                    <div>
+                        <label for="coverImage" class="block text-sm font-medium">Cover Image</label>
+                        <input type="file" id="coverImage" name="coverImage" accept="image/*" class="mt-1 w-full p-2 bg-gray-600 text-white border-none rounded-md" required>
+                    </div>
+                    <button type="submit" class="w-full bg-indigo-600 py-2 rounded-md hover:bg-indigo-700">Upload</button>
+                </form>
+            </div>
+        </div>
+    </section>
+
+    <!-- Contact Section -->
+    <section id="contact" class="py-16 bg-gray-900">
+        <div class="container mx-auto px-4 text-center">
+            <h2 class="text-3xl font-bold mb-4">Contact Us</h2>
+            <p class="text-lg max-w-2xl mx-auto">Have questions or want to collaborate? Reach out to our CEO, Jihad Davis, at <a href="mailto:sorennmedia@gmail.com" class="text-indigo-400 hover:underline">sorennmedia@gmail.com</a> or follow on Instagram: <a href="https://www.instagram.com/cmejayd?igsh=Ym9zOWY3YjAxeTE5" target="_blank" class="text-indigo-400 hover:underline">@cmejayd</a>.</p>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-gray-800 py-6 text-center">
+        <p>© 2025 Soren Music. All rights reserved.</p>
+        <div class="mt-2">
+            <a href="#" class="text-indigo-300 hover:text-indigo-100 mx-2"><i class="fab fa-twitter"></i></a>
+            <a href="#" class="text-indigo-300 hover:text-indigo-100 mx-2"><i class="fab fa-instagram"></i></a>
+            <a href="#" class="text-indigo-300 hover:text-indigo-100 mx-2"><i class="fab fa-youtube"></i></a>
+        </div>
+    </footer>
+
+    <script src="/script.js"></script>
+</body>
+</html>
