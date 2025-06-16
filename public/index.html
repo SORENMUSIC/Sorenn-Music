@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Soren Offers</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/js/all.min.js" defer></script>
+</head>
+<body class="bg-gray-100 text-gray-800">
+  <header class="bg-white shadow-md">
+    <div class="container mx-auto px-4 py-4 flex justify-between items-center">
+      <h1 class="text-2xl font-bold text-green-600">Soren Offers</h1>
+      <nav class="space-x-4 text-sm">
+        <a href="#search" class="hover:text-green-600">Search</a>
+        <a href="#analyzer" class="hover:text-green-600">Deal Analyzer</a>
+        <a href="#comps" class="hover:text-green-600">Comps</a>
+        <a href="#documents" class="hover:text-green-600">Documents</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container mx-auto px-4 py-8 space-y-16">
+    <!-- Search Section -->
+    <section id="search" class="space-y-4">
+      <h2 class="text-xl font-semibold">Property Search</h2>
+      <form id="searchForm" class="flex flex-col sm:flex-row gap-2">
+        <input id="addressInput" type="text" placeholder="Enter address" class="flex-grow p-2 border rounded shadow-sm" required>
+        <button class="bg-green-600 text-white px-4 py-2 rounded shadow">Search</button>
+      </form>
+      <div id="listings" class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+    </section>
+
+    <!-- Deal Analyzer -->
+    <section id="analyzer" class="space-y-4">
+      <h2 class="text-xl font-semibold">Deal Analyzer</h2>
+      <div class="grid sm:grid-cols-2 gap-4">
+        <div class="space-y-2">
+          <label class="block text-sm">After Repair Value (ARV)</label>
+          <input id="arv" type="number" class="w-full p-2 border rounded" placeholder="0">
+          <label class="block text-sm">Repair Cost</label>
+          <input id="repairCost" type="number" class="w-full p-2 border rounded" placeholder="0">
+        </div>
+        <div id="repairEstimator" class="space-y-2">
+          <span class="block text-sm font-medium">Repair Cost Estimator</span>
+          <label class="block"><input type="checkbox" value="8000" class="repair"> Roof ($8k)</label>
+          <label class="block"><input type="checkbox" value="12000" class="repair"> Kitchen ($12k)</label>
+          <label class="block"><input type="checkbox" value="6000" class="repair"> HVAC ($6k)</label>
+          <label class="block"><input type="checkbox" value="5000" class="repair"> Windows ($5k)</label>
+        </div>
+      </div>
+      <button id="analyzeBtn" class="bg-green-600 text-white px-4 py-2 rounded shadow">Analyze</button>
+      <div id="analysisResults" class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+    </section>
+
+    <!-- Comps Section -->
+    <section id="comps" class="space-y-4">
+      <h2 class="text-xl font-semibold">Comparable Sales</h2>
+      <div id="compsResults" class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+    </section>
+
+    <!-- Documents -->
+    <section id="documents" class="space-y-4">
+      <h2 class="text-xl font-semibold">Document Generator</h2>
+      <button id="generateContract" class="bg-green-600 text-white px-4 py-2 rounded shadow">Generate Assignment Contract</button>
+    </section>
+  </main>
+
+  <!-- Chatbot -->
+  <div id="chatContainer" class="fixed bottom-4 right-4 w-72 bg-white border rounded shadow-lg hidden flex flex-col">
+    <div class="bg-green-600 text-white p-2 flex justify-between items-center">
+      <span>AI Assistant</span>
+      <button id="closeChat" class="text-white">&times;</button>
+    </div>
+    <div id="chatMessages" class="p-2 space-y-2 overflow-y-auto h-64"></div>
+    <form id="chatForm" class="flex border-t">
+      <input id="chatInput" class="flex-grow p-2" placeholder="Ask a question" autocomplete="off">
+      <button class="px-4 text-green-600">Send</button>
+    </form>
+  </div>
+  <button id="openChat" class="fixed bottom-4 right-4 bg-green-600 text-white rounded-full h-12 w-12 shadow-lg flex items-center justify-center">
+    <i class="fas fa-comments"></i>
+  </button>
+
+  <script src="script.js"></script>
+</body>
+</html>
